@@ -63,7 +63,7 @@ const uint16_t lineTable[] = {
     1000000L / 1500 // 1500 lines/sec = fastest
 };
 
-uint16_t lineInterval = 1000000L / 300;
+uint16_t lineInterval = 1000000L / 375;
 uint32_t lastLineTime = 0L;
 
 uint8_t pixel = 0;
@@ -99,12 +99,11 @@ uint32_t loopTest2 = 0;
 uint32_t loopTest_mean = 0;
 int counter = 0;
 
-
 void loop()
 {
   uint32_t t = millis();
   loopTest = t;
-  
+
   showColumn();
   strip.setBrightness(30);
   strip.show(); // Refresh LEDs
@@ -117,12 +116,12 @@ void loop()
     case BTN_BRIGHT_UP:
       if (bLevel < (sizeof(brightness) - 1))
         strip.setBrightness(brightness[++bLevel]);
-        Serial.println("brightness up");
+      Serial.println("brightness up");
       break;
     case BTN_BRIGHT_DOWN:
       if (bLevel)
         strip.setBrightness(brightness[--bLevel]);
-        Serial.println("brightness down");
+      Serial.println("brightness down");
       break;
     }
     irCode = BTN_NONE;
@@ -152,7 +151,7 @@ void showColumn()
   for (int i = 0; i <= rows; i++)
   {
     strip.setPixelColor(i, animation[frame][column][i][0], animation[frame][column][i][1], animation[frame][column][i][2]);
-    //strip.setPixelColor(i + 72, animation[frame][column][i][0], animation[frame][column][i][1], animation[frame][column][i][2]);
+    // strip.setPixelColor(i + 72, animation[frame][column][i][0], animation[frame][column][i][1], animation[frame][column][i][2]);
   }
 }
 
