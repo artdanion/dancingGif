@@ -3,8 +3,8 @@
 #include <TinyPICO.h>
 #include <Wire.h>
 #include <grafic.h>
+#include <SPI.h>
 
-typedef uint16_t line_t;
 TinyPICO tp = TinyPICO();
 
 #define NUMPIXELS 144 // Number of LEDs in strip
@@ -35,8 +35,6 @@ TinyPICO tp = TinyPICO();
 #define BATT_MIN_MV 3150 // Some headroom over battery cutoff near 2.9V
 #define BATT_MAX_MV 4000 // And little below fresh-charged battery near 4.1V
 
-#define CYCLE_TIME 15
-
 Adafruit_DotStar strip(NUMPIXELS, DATAPIN, CLOCKPIN, DOTSTAR_BRG);
 
 #if !defined(STR_HELPER)
@@ -63,7 +61,7 @@ const uint16_t lineTable[] = {
     1000000L / 1500 // 1500 lines/sec = fastest
 };
 
-uint16_t lineInterval = 1000000L / 375;
+uint16_t lineInterval = 1000000L / 250;
 uint32_t lastLineTime = 0L;
 
 uint8_t pixel = 0;
@@ -72,14 +70,15 @@ uint8_t column = 0;
 uint8_t line = 0;
 
 uint8_t frames = 8;
-uint8_t rows = 114;
-uint8_t columns = 72;
+uint8_t rows = 72;
+uint8_t columns = 114;
 
 void setup()
 {
   Serial.begin(115200);
   strip.begin(); // Initialize pins for output
   strip.clear(); // Make sure strip is clear
+  strip.setBrightness(30);
   strip.show();  // Turn all LEDs off ASAP
 
   Serial.println(F("START " __FILE__ " from " __DATE__));
@@ -89,28 +88,16 @@ void setup()
   showBatteryLevel();
 }
 
-// Runs 10 LEDs at a time along strip, cycling through red, green and blue.
-// This requires about 200 mA for all the 'on' pixels + 1 mA per 'off' pixel.
-
-int head = 0, tail = -10;  // Index of first 'on' and 'off' pixels
-uint32_t color = 0xFF0000; // 'On' color (starts red)
-uint32_t loopTest = 0;
-uint32_t loopTest2 = 0;
-uint32_t loopTest_mean = 0;
 int counter = 0;
 
 void loop()
 {
   uint32_t t = millis();
-  loopTest = t;
 
   showColumn();
-  strip.setBrightness(30);
-  strip.show(); // Refresh LEDs
 
   while (((t = micros()) - lastLineTime) < lineInterval)
   {
-    Serial.println(t);
     switch (irCode)
     {
     case BTN_BRIGHT_UP:
@@ -142,16 +129,18 @@ void loop()
       frame = 0;
     }
   }
+
+  strip.show(); // Refresh LEDs
   lastLineTime = t;
 }
 
 void showColumn()
 {
 
-  for (int i = 0; i <= rows; i++)
+  for (int i = 0; i < rows; i++)
   {
-    strip.setPixelColor(i, animation[frame][column][i][0], animation[frame][column][i][1], animation[frame][column][i][2]);
-    // strip.setPixelColor(i + 72, animation[frame][column][i][0], animation[frame][column][i][1], animation[frame][column][i][2]);
+    strip.setPixelColor(i, animation[0][column][i][0], animation[0][column][i][1], animation[0][column][i][2]);
+    strip.setPixelColor(i + 72, animation[0][column][i][0], animation[0][column][i][1], animation[0][column][i][2]);
   }
 }
 
@@ -174,6 +163,7 @@ void showBatteryLevel(void)
   // Display battery level bargraph on startup.  It's just a vague estimate
   // based on cell voltage (drops with discharge) but doesn't handle curve.
   uint16_t mV = tp.GetBatteryVoltage() * 1000;
+  Serial.println(tp.GetBatteryVoltage() * 1000);
   uint8_t lvl = (mV >= BATT_MAX_MV) ? NUM_LEDS : // Full (or nearly)
                     (mV <= BATT_MIN_MV) ? 1
                                         : // Drained
@@ -186,7 +176,7 @@ void showBatteryLevel(void)
     strip.show(); // Animate a bit
     delay(250 / NUM_LEDS);
   }
-  delay(1500);   // Hold last state a moment
+  delay(2500);   // Hold last state a moment
   strip.clear(); // Then clear strip
   strip.show();
 }
